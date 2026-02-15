@@ -2,102 +2,113 @@
 <html lang="mr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1024"> <title>Sumeet Elko - Ultra HD Stable Pro</title>
+    <meta name="viewport" content="width=1024"> <title>Sumeet Elko - Master HD Editor</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     
     <style>
-        :root { --blue: #1e3a8a; --accent: #3b82f6; --dark: #111; }
-        body { font-family: 'Segoe UI', sans-serif; background: #222; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { --blue: #1e3a8a; --accent: #3b82f6; --dark: #000; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: white; }
         
-        /* Header */
-        .header { background: var(--dark); color: white; padding: 10px; border-bottom: 2px solid var(--accent); z-index: 2000; text-align: center; }
-        .btn-panel { display: flex; gap: 10px; justify-content: center; padding: 5px; }
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; font-size: 14px; text-transform: uppercase; white-space: nowrap; }
+        /* Fixed Header & Slider Area */
+        .top-fixed-section {
+            position: sticky; top: 0; width: 100%; background: var(--dark);
+            z-index: 2000; border-bottom: 3px solid var(--accent);
+            display: flex; flex-direction: column;
+        }
+
+        .header { padding: 10px; text-align: center; border-bottom: 1px solid #333; }
+        .btn-panel { display: flex; gap: 10px; justify-content: center; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; font-size: 13px; text-transform: uppercase; }
         .btn-add { background: var(--accent); }
         .btn-pdf { background: #10b981; border: 2px solid #fff; }
 
-        /* Main Workspace */
-        .main-workspace { display: flex; flex: 1; overflow: hidden; flex-direction: column; }
-
-        /* Professional Horizontal Slider */
+        /* Professional Horizontal Slider - FIXED */
         .sidebar { 
-            width: 100%; height: 130px; background: #1a1a1a; 
-            border-bottom: 2px solid #444; overflow-x: auto; overflow-y: hidden; 
+            width: 100%; height: 130px; background: #111; 
+            overflow-x: auto; overflow-y: hidden; 
             display: flex; padding: 15px; gap: 20px; align-items: center;
-            scrollbar-width: thin; scrollbar-color: var(--accent) #1a1a1a;
+            scrollbar-width: thin; scrollbar-color: var(--accent) #111;
         }
-        .sidebar::-webkit-scrollbar { height: 6px; }
+        .sidebar::-webkit-scrollbar { height: 8px; }
         .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
 
         .thumb-wrapper { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; }
-        .thumb-box { width: 140px; height: 80px; background: #fff; border: 2px solid #555; cursor: pointer; overflow: hidden; position: relative; }
-        .thumb-box.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        .thumb-box { width: 140px; height: 80px; background: #fff; border: 2px solid #555; cursor: pointer; overflow: hidden; border-radius: 4px; }
+        .thumb-box.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); transform: scale(1.05); }
         .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
-        .thumb-num { color: #fff; font-size: 12px; font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 10px; }
+        .thumb-num { font-size: 11px; font-weight: bold; color: #fff; background: #333; padding: 2px 8px; border-radius: 10px; }
 
-        /* Editor Area */
-        .editor { flex: 1; background: #333; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px 0; }
-        #container { transform-origin: top center; transition: 0.2s; }
-        
-        /* Slide Fixed Layout */
+        /* Workspace */
+        .editor { flex: 1; background: #222; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 50px 0; }
+        #container { transform-origin: top center; transition: 0.3s; }
+
+        /* HD Slide Design */
         .slide {
-            width: 960px; height: 540px; background-image: url('./bg.jpg'); 
+            width: 960px; height: 540px; 
+            background-image: url('./bg.jpg'); 
             background-size: 100% 100%; background-repeat: no-repeat;
-            background-color: white; position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            flex-shrink: 0; margin-bottom: 100px; color: #000; overflow: hidden;
+            background-color: white; position: relative; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); flex-shrink: 0; 
+            margin-bottom: 100px; color: #000; overflow: hidden;
         }
 
-        /* Title Area Stability */
+        /* Text Overlap Fix - Fixed Positioning */
         .intro-area { 
-            position: absolute; left: 70px; top: 180px; width: 600px; 
-            text-align: left; display: block;
+            position: absolute; left: 70px; top: 180px; width: 550px; 
+            display: flex; flex-direction: column; justify-content: flex-start;
         }
         .main-t { 
             font-family: 'Impact', sans-serif; font-size: 75px; color: var(--blue); 
-            outline: none; text-transform: uppercase; line-height: 1.0; 
-            margin: 0; padding: 0; display: block; width: 100%; word-wrap: break-word;
+            line-height: 1.1; margin: 0; outline: none; text-transform: uppercase;
         }
-        .sub-t { font-size: 26px; font-weight: bold; color: #333; margin-top: 15px; outline: none; line-height: 1.2; display: block; }
+        .sub-t { font-size: 26px; font-weight: bold; color: #333; margin-top: 10px; outline: none; }
 
-        .photo-grid { display: flex; width: 88%; height: 62%; gap: 20px; position: absolute; top: 115px; left: 6%; }
-        .photo-item { flex: 1; height: 100%; border: 6px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.4); position: relative; background: #eee; cursor: grab; }
+        /* Photo Grid with HD Borders */
+        .photo-grid { display: flex; width: 88%; height: 62%; gap: 20px; position: absolute; top: 110px; left: 6%; }
+        .photo-item { 
+            flex: 1; height: 100%; border: 8px solid white !important; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4); 
+            position: relative; background: #eee; cursor: grab; 
+        }
         .photo-item img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
 
-        .text-overlay { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.85); color: white; padding: 8px 18px; font-size: 22px; border-radius: 4px; font-weight: bold; display: none; z-index: 10; }
-        
-        .label-modal { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: white; padding: 25px; border-radius: 15px; display: none; 
-            flex-direction: column; gap: 15px; z-index: 5000; border: 3px solid var(--accent);
-        }
-        .select-btn { background: #111; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; font-size: 20px; cursor: pointer; }
+        /* Labels & Modals */
+        .text-overlay { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.9); color: white; padding: 6px 20px; font-size: 22px; font-weight: bold; border-radius: 4px; display: none; z-index: 10; }
+        .label-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 12px; display: none; flex-direction: column; gap: 10px; z-index: 5000; border: 3px solid var(--accent); color: #000; }
+        .select-btn { background: #111; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
         .slide-ctrl, .photo-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 10px; z-index: 100; }
-        .mini-btn { font-size: 14px; padding: 10px 16px; background: rgba(0,0,0,0.85); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); color: white; z-index: 9999; justify-content: center; align-items: center; font-size: 24px; text-align: center; font-weight: bold; }
+        .mini-btn { font-size: 13px; padding: 8px 16px; background: rgba(0,0,0,0.85); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; font-size: 24px; text-align: center; }
+        .p-bar { width: 60%; height: 10px; background: #333; border-radius: 10px; margin-top: 20px; overflow: hidden; }
+        .p-fill { width: 0%; height: 100%; background: var(--accent); transition: 0.1s; }
     </style>
 </head>
 <body>
 
-<div id="loader">🚀 Ultra HD PDF तयार होत आहे... <br> कृपया १ मिनिट थांबा.</div>
-
-<div class="header">
-    <div class="btn-panel">
-        <input type="file" id="files" accept="image/*" multiple style="display:none" onchange="addPhotoSlides()">
-        <button class="btn btn-add" onclick="document.getElementById('files').click()">📷 Generate Report</button>
-        <button class="btn btn-add" style="background:#f59e0b" onclick="addIntro()">📄 Add Intro</button>
-        <button class="btn btn-pdf" onclick="downloadUltraHD()">📥 Download HD PDF</button>
-    </div>
+<div id="loader">
+    <div id="status">HD रेंडरिंग सुरू आहे...</div>
+    <div class="p-bar"><div id="pFill" class="p-fill"></div></div>
 </div>
 
-<div class="main-workspace">
-    <div class="sidebar" id="sidebar"></div>
-    <div class="editor" id="editor">
-        <div id="container"></div>
+<div class="top-fixed-section">
+    <div class="header">
+        <div class="btn-panel">
+            <input type="file" id="files" accept="image/*" multiple style="display:none" onchange="addPhotoSlides()">
+            <button class="btn btn-add" onclick="document.getElementById('files').click()">📷 Gen Report</button>
+            <button class="btn btn-add" style="background:#f59e0b" onclick="addIntro()">📄 Add Intro</button>
+            <button class="btn btn-pdf" onclick="downloadMasterHD()">📥 Download Ultra HD PDF</button>
+        </div>
     </div>
+    <div class="sidebar" id="sidebar"></div>
+</div>
+
+<div class="editor" id="editor">
+    <div id="container"></div>
 </div>
 
 <script>
@@ -116,13 +127,13 @@
         onEnd: () => {
             const thumbs = document.querySelectorAll('.thumb-box');
             thumbs.forEach(t => container.appendChild(document.getElementById(t.dataset.id)));
-            updateSlideNumbers();
+            updateNums();
         }
     });
 
     window.onload = () => { addIntro(); adjustScale(); };
 
-    function updateSlideNumbers() {
+    function updateNums() {
         document.querySelectorAll('.thumb-wrapper').forEach((w, i) => w.querySelector('.thumb-num').innerText = i + 1);
     }
 
@@ -142,11 +153,11 @@
         adjustScale();
     }
 
-    function createThumb(id, imgData) {
+    function createThumb(id, img) {
         const w = document.createElement('div'); w.className = 'thumb-wrapper';
-        w.innerHTML = `<div class="thumb-box" data-id="${id}" onclick="document.getElementById('${id}').scrollIntoView({behavior:'smooth',block:'center'})">${imgData ? `<img src="${imgData}">` : '<div style="font-size:10px; padding:20px; color:#333;">TITLE PAGE</div>'}</div><div class="thumb-num"></div>`;
+        w.innerHTML = `<div class="thumb-box" data-id="${id}" onclick="document.getElementById('${id}').scrollIntoView({behavior:'smooth',block:'center'})">${img ? `<img src="${img}">` : '<div style="font-size:10px; padding:20px; color:#333; text-align:center;">TITLE</div>'}</div><div class="thumb-num"></div>`;
         sidebar.appendChild(w);
-        updateSlideNumbers();
+        updateNums();
     }
 
     async function addPhotoSlides() {
@@ -156,11 +167,11 @@
             const div = document.createElement('div');
             div.className = 'slide'; div.id = id;
             const grid = document.createElement('div'); grid.className = 'photo-grid';
-            const imgData = await loadImg(files[i], grid, id);
+            const imgD = await loadImg(files[i], grid, id);
             if (files[i+1]) await loadImg(files[i+1], grid, id);
             div.innerHTML = `<div class="slide-ctrl"><button class="mini-btn" style="background:red" onclick="removeSlide('${id}')">X</button></div>`;
             div.appendChild(grid); container.appendChild(div);
-            createThumb(id, imgData);
+            createThumb(id, imgD);
             new Sortable(grid, { group: 'photos', animation: 200 });
         }
         adjustScale();
@@ -175,7 +186,6 @@
                     <div class="label-modal">
                         <button class="select-btn" onclick="setLabel(this,'BEFORE')">BEFORE</button>
                         <button class="select-btn" onclick="setLabel(this,'AFTER')">AFTER</button>
-                        <button class="select-btn" style="background:orange" onclick="setLabel(this,'')">CLEAR LABEL</button>
                         <button class="select-btn" style="background:red" onclick="this.parentElement.style.display='none'">CLOSE</button>
                     </div>
                     <div class="photo-actions">
@@ -206,35 +216,31 @@
     function removeSlide(id) {
         document.getElementById(id).remove();
         document.querySelector(`[data-id="${id}"]`).closest('.thumb-wrapper').remove();
-        updateSlideNumbers();
+        updateNums();
     }
 
-    async function downloadUltraHD() {
+    async function downloadMasterHD() {
         const slides = document.querySelectorAll('.slide'); if(!slides.length) return;
         document.getElementById('loader').style.display = 'flex';
+        const pFill = document.getElementById('pFill');
+        const status = document.getElementById('status');
         
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'px', [960, 540]);
 
         for (let i = 0; i < slides.length; i++) {
+            status.innerText = `रेंडरिंग: ${i + 1} / ${slides.length}`;
+            pFill.style.width = `${((i+1)/slides.length)*100}%`;
+
             slides[i].querySelectorAll('.slide-ctrl, .photo-actions, .label-modal').forEach(el => el.style.visibility = 'hidden');
-            
-            // Ultra HD Quality Scale: 4
-            const canvas = await html2canvas(slides[i], { 
-                scale: 4, 
-                useCORS: true, 
-                logging: false,
-                backgroundColor: null,
-                imageTimeout: 0
-            });
-            
+            const canvas = await html2canvas(slides[i], { scale: 4, useCORS: true, logging: false });
             slides[i].querySelectorAll('.slide-ctrl, .photo-actions, .label-modal').forEach(el => el.style.visibility = 'visible');
 
             if (i > 0) doc.addPage();
             doc.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 960, 540);
+            if (i % 5 === 0) await new Promise(r => setTimeout(r, 100));
         }
-        
-        doc.save(`Sumeet_Elko_HD_Report_${Date.now()}.pdf`);
+        doc.save(`Sumeet_Elko_HD_${Date.now()}.pdf`);
         document.getElementById('loader').style.display = 'none';
     }
 </script>
