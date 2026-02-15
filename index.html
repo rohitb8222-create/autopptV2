@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sumeet Elko - Pro Editor v4</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        :root { --blue: #1e3a8a; --accent: #3b82f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: white; }
+        
+        /* Dashboard */
+        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--accent); z-index: 2000; text-align: center; }
+        .btn-panel { display: flex; gap: 8px; overflow-x: auto; padding: 5px; justify-content: center; }
+        .btn { padding: 12px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; font-size: 13px; text-transform: uppercase; white-space: nowrap; }
+        .btn-add { background: var(--accent); }
+        .btn-pdf { background: #10b981; }
+
+        /* Workspace */
+        .main-workspace { display: flex; flex: 1; overflow: hidden; flex-direction: row; }
+        @media (max-width: 768px) { .main-workspace { flex-direction: column; } }
+
+        .sidebar { width: 220px; background: #111; overflow-y: auto; display: flex; flex-direction: column; padding: 10px; gap: 15px; border-right: 1px solid #333; }
+        @media (max-width: 768px) { .sidebar { width: 100%; height: 120px; flex-direction: row; overflow-x: auto; border-bottom: 1px solid #333; } }
+
+        .thumb-box { width: 130px; height: 75px; background: #fff; border: 2px solid #444; cursor: pointer; overflow: hidden; flex-shrink: 0; }
+        .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        .editor { flex: 1; background: #222; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #container { transform-origin: top center; transition: 0.2s; }
+
+        .slide { 
+            width: 960px; height: 540px; 
+            background-image: url('./bg.jpg'); 
+            background-size: 100% 100%; 
+            position: relative; 
+            box-shadow: 0 0 25px rgba(0,0,0,0.8); 
+            flex-shrink: 0; 
+            margin-bottom: 50px; 
+        }
+
+        /* Photo Grid with Border */
+        .photo-grid { display: flex; width: 88%; height: 62%; gap: 20px; position: absolute; top: 110px; left: 6%; }
+        .photo-item { 
+            flex: 1; height: 100%; 
+            border: 6px solid white !important; /* Border Re-added */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+            position: relative; background: #eee; cursor: grab; 
+        }
+        .photo-item img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+
+        .intro-area { position: absolute; left: 70px; top: 180px; width: 550px; text-align: left; color: #000; }
+        .main-t { font-family: 'Impact', sans-serif; font-size: 75px; color: var(--blue); outline: none; }
+
+        .text-overlay { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.85); color: white; padding: 6px 15px; font-size: 20px; font-weight: bold; display: none; z-index: 10; }
+        .label-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 15px; border-radius: 10px; display: none; flex-direction: column; gap: 10px; z-index: 1000; border: 2px solid var(--accent); color: #000; }
+
+        .slide-ctrl, .photo-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; z-index: 100; }
+        .mini-btn { font-size: 12px; padding: 8px 12px; background: rgba(0,0,0,0.85); color: white; border: none; border-radius: 5px; cursor: pointer; }
+
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; }
+        .progress-bar { width: 70%; height: 10px; background: #444; border-radius: 5px; margin-top: 15px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <div id="statusText">PDF तयार होत आहे...</div>
+    <div class="progress-bar"><div id="pFill" class="progress-fill"></div></div>
+</div>
+
+<div class="header">
+    <div class="btn-panel">
+        <input type="file" id="files" accept="image/*" multiple style="display:none" onchange="addPhotoSlides()">
+        <button class="btn btn-add" onclick="document.getElementById('files').click()">📷 Generate Report</button>
+        <button class="btn btn-add" style="background:#f59e0b" onclick="addIntro()">📄 Add Intro</button>
+        <button class="btn btn-pdf" onclick="forceDownload()">📥 Download PDF</button>
+    </div>
+</div>
+
+<div class="main-workspace">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="editor" id="editor"><div id="container"></div></div>
+</div>
+
+<script>
+    const container = document.getElementById('container');
+    const sidebar = document.getElementById('sidebar');
+
+    function adjustScale() {
+        const editorWidth = document.getElementById('editor').clientWidth - 40;
+        const scale = editorWidth < 960 ? editorWidth / 960 : 1;
+        container.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', adjustScale);
+
+    new Sortable(sidebar, { animation: 150, onEnd: () => {
+        const thumbs = document.querySelectorAll('.thumb-box');
+        thumbs.forEach(t => container.appendChild(document.getElementById(t.dataset.id)));
+    }});
+
+    window.onload = () => { addIntro(); adjustScale(); };
+
+    function addIntro() {
+        const id = 's-' + Date.now();
+        const div = document.createElement('div');
+        div.className = 'slide'; div.id = id;
+        div.innerHTML = `<div class="slide-ctrl"><button class="mini-btn" style="background:red" onclick="removeSlide('${id}')">X</button></div>
+            <div class="intro-area"><div class="main-t" contenteditable="true">DEEP CLEANING DRIVE</div>
+            <div style="font-size:24px; font-weight:bold; color:#444;" contenteditable="true">Maintaining Hygiene, Ensuring Safety</div></div>`;
+        container.appendChild(div);
+        createThumb(id, null);
+        adjustScale();
+    }
+
+    function createThumb(id, imgData) {
+        const w = document.createElement('div'); w.className = 'thumb-wrapper';
+        w.innerHTML = `<div class="thumb-box" data-id="${id}" onclick="document.getElementById('${id}').scrollIntoView({behavior:'smooth',block:'center'})">${imgData ? `<img src="${imgData}">` : 'TITLE'}</div>`;
+        sidebar.appendChild(w);
+    }
+
+    async function addPhotoSlides() {
+        const files = Array.from(document.getElementById('files').files);
+        for (let i = 0; i < files.length; i += 2) {
+            const id = 's-' + Date.now() + i;
+            const div = document.createElement('div');
+            div.className = 'slide'; div.id = id;
+            const grid = document.createElement('div'); grid.className = 'photo-grid';
+            const imgData = await loadImg(files[i], grid, id);
+            if (files[i+1]) await loadImg(files[i+1], grid, id);
+            div.innerHTML = `<div class="slide-ctrl"><button class="mini-btn" style="background:red" onclick="removeSlide('${id}')">X</button></div>`;
+            div.appendChild(grid); container.appendChild(div);
+            createThumb(id, imgData);
+            new Sortable(grid, { group: 'photos', animation: 200 });
+        }
+        adjustScale();
+    }
+
+    function loadImg(f, p, sid) {
+        return new Promise(res => {
+            const r = new FileReader();
+            r.onload = e => {
+                const item = document.createElement('div'); item.className = 'photo-item';
+                item.innerHTML = `<img src="${e.target.result}"><div class="text-overlay">BEFORE</div>
+                    <div class="label-modal">
+                        <button class="mini-btn" onclick="setLabel(this,'BEFORE')">BEFORE</button>
+                        <button class="mini-btn" onclick="setLabel(this,'AFTER')">AFTER</button>
+                        <button class="mini-btn" style="background:red" onclick="this.parentElement.style.display='none'">CLOSE</button>
+                    </div>
+                    <div class="photo-actions">
+                        <button class="mini-btn" onclick="changeImg(this)">🔄 Change</button>
+                        <button class="mini-btn" onclick="this.closest('.photo-item').querySelector('.label-modal').style.display='flex'">LABEL</button>
+                    </div>`;
+                p.appendChild(item); res(e.target.result);
+            }; r.readAsDataURL(f);
+        });
+    }
+
+    function changeImg(btn) {
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'image/*';
+        inp.onchange = e => {
+            const r = new FileReader();
+            r.onload = ev => btn.closest('.photo-item').querySelector('img').src = ev.target.result;
+            r.readAsDataURL(e.target.files[0]);
+        };
+        inp.click();
+    }
+
+    function setLabel(btn, txt) {
+        const o = btn.closest('.photo-item').querySelector('.text-overlay');
+        o.innerText = txt; o.style.display = 'block';
+        btn.parentElement.style.display = 'none';
+    }
+
+    function removeSlide(id) {
+        document.getElementById(id).remove();
+        document.querySelector(`[data-id="${id}"]`).parentElement.remove();
+    }
+
+    // Direct Stream Download
+    async function forceDownload() {
+        const slides = document.querySelectorAll('.slide'); if(!slides.length) return;
+        const loader = document.getElementById('loader');
+        const pFill = document.getElementById('pFill');
+        loader.style.display = 'flex';
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'px', [960, 540]);
+
+        for (let i = 0; i < slides.length; i++) {
+            pFill.style.width = `${((i + 1) / slides.length) * 100}%`;
+            slides[i].querySelectorAll('.slide-ctrl, .photo-actions, .label-modal').forEach(el => el.style.visibility = 'hidden');
+            
+            const canvas = await html2canvas(slides[i], { scale: 1.5, useCORS: true });
+            
+            slides[i].querySelectorAll('.slide-ctrl, .photo-actions, .label-modal').forEach(el => el.style.visibility = 'visible');
+
+            if (i > 0) doc.addPage();
+            doc.addImage(canvas.toDataURL('image/jpeg', 0.75), 'JPEG', 0, 0, 960, 540);
+            if (i % 5 === 0) await new Promise(r => setTimeout(r, 100));
+        }
+
+        // डायरेक्ट डाउनलोड ट्रिगर
+        doc.save(`Sumeet_Report_${Date.now()}.pdf`);
+        loader.style.display = 'none';
+    }
+</script>
+</body>
+</html>
